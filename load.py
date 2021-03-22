@@ -5,39 +5,13 @@ from glob import glob
 import cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+import pickle as pkl
+import matplotlib.pyplot as plt
 
 DATA_PATH = r'./Dataset'
 
 
-def load(test=False, width=96, height=96, sigma=5):
-    pass
-
-    # df = pd.read_csv(os.path.expanduser(fname))
-    #
-    # df['Image'] = df['Image'].apply(lambda im: np.fromstring(im, sep=' '))
-    #
-    # myprint = df.count()
-    # myprint = myprint.reset_index()
-    # print(myprint)
-    # ## row with at least one NA columns are removed!
-    # ## df = df.dropna()
-    # df = df.fillna(-1)
-    #
-    # X = np.vstack(df['Image'].values) / 255.  # changes valeus between 0 and 1
-    # X = X.astype(np.float32)
-    #
-    # if not test:  # labels only exists for the training data
-    #     y, y0, nm_landmark = get_y_as_heatmap(df, height, width, sigma)
-    #     X, y, y0 = shuffle(X, y, y0, random_state=42)  # shuffle data
-    #     y = y.astype(np.float32)
-    # else:
-    #     y, y0, nm_landmark = None, None, None
-    #
-    # return X, y, y0, nm_landmark
-
-
-def load2d(test=False, width=96, height=96, sigma=5):
+def load():
     df = pd.DataFrame(columns=['Keypoint1_x', 'Keypoint1_y', 'Keypoint2_x', 'Keypoint2_y',
                                'Keypoint3_x', 'Keypoint3_y', 'Keypoint4_x', 'Keypoint4_y',
                                'Keypoint5_x', 'Keypoint5_y', 'Keypoint6_x', 'Keypoint6_y',
@@ -67,17 +41,12 @@ def load2d(test=False, width=96, height=96, sigma=5):
                                               'Keypoint9_x', 'Keypoint9_y', 'Image'])
         df = df.append(array_df)
 
+    df = df.dropna(how='all')
     print(df)
     df = shuffle(df)
     trainDf, testDf = train_test_split(df, test_size=0.1)
     trainDf.to_pickle("./train_data.pkl")
     testDf.to_pickle("./test_data.pkl")
 
-    # re = load(test, width, height, sigma)
-    # X = re[0].reshape(-1, width, height, 1)
-    # y, y0, nm_landmarks = re[1:]
-    #
-    # return X, y, y0, nm_landmarks
 
-
-load2d()
+load()
