@@ -76,12 +76,11 @@ def load2d(test=False, width=96, height=96, sigma=5):
 
     df = pd.read_pickle(path)
 
-    if test:
-        path = "./test_data_aug.pkl"
-    else:
-        path = "./train_data_aug.pkl"
-
-    df.append(pd.read_pickle(path))
+    # if test:
+    #     path = "./test_data_aug.pkl"
+    #     df.append(pd.read_pickle(path))
+    #     path = "./train_data_aug.pkl"
+    #     df.append(pd.read_pickle(path))
 
     df = df.replace(to_replace='None', value=np.nan).dropna()
 
