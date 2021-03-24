@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 import pickle as pkl
 import matplotlib.pyplot as plt
 
-DATA_PATH = r'./Dataset'
+DATA_PATH = r'./Dataset' # Change if data is in other folder
 
 
 def load():
@@ -22,7 +22,9 @@ def load():
         DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, name))]
 
     for subdir in subdirs:
-        keypoint_file = glob(subdir + '/*keypoints')
+        keypoint_file = glob(subdir + '/*keypoints_96') # Keypoint filename
+        if len(keypoint_file) == 0:
+            continue
         file = open(keypoint_file[0], "r")
         file_content = file.read()
         arr = [line.split() for line in file_content.split('\n')]
@@ -32,6 +34,10 @@ def load():
             image = np.array(cv2.imread(os.path.join(
                 color_subdir, filename), cv2.IMREAD_GRAYSCALE))
             image = image / 255
+
+            if(i >= len(arr)):
+                continue
+
             arr[i].append(image)
 
         array_df = pd.DataFrame(arr, columns=['Keypoint1_x', 'Keypoint1_y', 'Keypoint2_x', 'Keypoint2_y',
@@ -45,8 +51,8 @@ def load():
     print(df)
     df = shuffle(df)
     trainDf, testDf = train_test_split(df, test_size=0.1)
-    trainDf.to_pickle("./train_data.pkl")
-    testDf.to_pickle("./test_data.pkl")
+    trainDf.to_pickle("./train_data.pkl", protocol=5)  # set protocol to 4 if working with Colab
+    testDf.to_pickle("./test_data.pkl", protocol=5)  # set protocol to 4 if working with Colab
 
 
 load()

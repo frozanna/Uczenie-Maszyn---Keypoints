@@ -1,4 +1,3 @@
-
 import cv2
 import time
 import sys
@@ -69,13 +68,21 @@ def get_y_as_heatmap(df, height, width, sigma):
     return(y_train, df[columns_lmxy], columns_lmxy)
 
 
-def load2d(test=False, width=256, height=256, sigma=5):
+def load2d(test=False, width=96, height=96, sigma=5):
     if test:
         path = "./test_data.pkl"
     else:
         path = "./train_data.pkl"
 
     df = pd.read_pickle(path)
+
+    if test:
+        path = "./test_data_aug.pkl"
+    else:
+        path = "./train_data_aug.pkl"
+
+    df.append(pd.read_pickle(path))
+
     df = df.replace(to_replace='None', value=np.nan).dropna()
 
     cols = df.columns[:-1]
@@ -92,7 +99,7 @@ def load2d(test=False, width=256, height=256, sigma=5):
     return X, y, y0, nm_landmarks
 
 
-input_height, input_width, sigma = 256, 256, 5
+input_height, input_width, sigma = 96, 96, 5
 
 
 # output shape is the same as input
@@ -157,19 +164,29 @@ o = Add()([o_block1, block1])
 output = Conv2DTranspose(nClasses,    kernel_size=(2, 2),  strides=(
     2, 2), use_bias=False, name='upsample_2', data_format=IMAGE_ORDERING)(o)
 
-# Decoder Block
-# upsampling to bring the feature map size to be the same as the input image i.e., heatmap size
-# output = Conv2DTranspose(nClasses,    kernel_size=(4, 4),  strides=(
-#     4, 4), use_bias=False, name='upsample_2', data_format=IMAGE_ORDERING)(o)
 
-# Reshaping is necessary to use sample_weight_mode="temporal" which assumes 3 dimensional output shape
-# See below for the discussion of weights
+# Decoder Block
 output = Reshape((output_width*input_height*nClasses, 1))(output)
 model = Model(img_input, output)
 model.summary()
 model.compile(loss='mse', optimizer="rmsprop", sample_weight_mode="temporal")
-# model = []
 
+
+def find_weight(y_tra):
+    weight = np.zeros_like(y_tra)
+    count0, count1 = 0, 0
+    for irow in range(y_tra.shape[0]):
+        for ifeat in range(y_tra.shape[-1]):
+            if np.all(y_tra[irow,:,:,ifeat] == 0):
+                value = 0
+                count0 += 1
+            else:
+                value = 1
+                count1 += 1
+            weight[irow,:,:,ifeat] = value
+    print("N landmarks={:5.0f}, N missing landmarks={:5.0f}, weight.shape={}".format(
+        count0,count1,weight.shape))
+    return(weight)
 
 def flatten_except_1dim(weight, ndim=2):
     '''
@@ -190,31 +207,30 @@ def flatten_except_1dim(weight, ndim=2):
 
 prop_train = 0.9
 Ntrain = int(X_train.shape[0]*prop_train)
-X_tra, y_tra, X_val, y_val = X_train[:Ntrain], y_train[:
-                                                       Ntrain], X_train[Ntrain:], y_train[Ntrain:]
+X_tra, y_tra, X_val, y_val = X_train[:Ntrain], y_train[:Ntrain], X_train[Ntrain:], y_train[Ntrain:]
 del X_train, y_train
 
+weight_val = find_weight(y_val)
+weight_val = flatten_except_1dim(weight_val)
 y_val_fla = flatten_except_1dim(y_val, ndim=3)
 
 # print("weight_tra.shape={}".format(weight_tra.shape))
 print("y_val_fla.shape={}".format(y_val_fla.shape))
 print(model.output.shape)
 
-nb_epochs = 2
+nb_epochs = 300
 batch_size = 8
 const = 10
 history = {"loss": [], "val_loss": []}
 for iepoch in range(nb_epochs):
     start = time.time()
 
-    # x_batch, y_batch, w_batch = transform_imgs(
-    #     [X_tra, y_tra, w_tra], landmark_order)
-    # If you want no data augementation, comment out the line above and uncomment the comment below:
     x_batch, y_batch = X_tra, y_tra
     y_batch_fla = flatten_except_1dim(y_batch, ndim=3)
 
     hist = model.fit(x_batch,
                      y_batch_fla*const,
+                     validation_data=(X_val, y_val_fla*const,weight_val),
                      batch_size=2,
                      epochs=1,
                      verbose=1)

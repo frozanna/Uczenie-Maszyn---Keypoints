@@ -3,12 +3,13 @@ import os
 import glob                
 import cv2
 
-folder = "./Dataset/Test/"
+folder = "./Dataset/"
 category = "ir_fm_f/"
 keypoint = "ir_fm_f_keypoints"
 color = "color/"
 mask = "mask/"
 rsize = 96
+
 
 def crop_mask(img):
     mask = img
@@ -34,8 +35,10 @@ def crop_mask(img):
         col_end = col_end + int(diff/2)
     return img[row_start:row_end,col_start:col_end], col_start, col_end, row_start, row_end
 
+
 def crop_image(img, col_start, col_end, row_start, row_end):
     return img[row_start:row_end,col_start:col_end]
+
 
 def load_images_from_folder(f, c):
     images = []
@@ -45,7 +48,8 @@ def load_images_from_folder(f, c):
             images.append(filename)
     return images
 
-def resize_img_and_keypint(img, n):
+
+def resize_img_and_keypoint(img, n):
     img_resized = img.resize((96, 96))
     ratio = 96 / img.height
 
@@ -57,11 +61,14 @@ keypoint_file = folder + category + keypoint
 file = open(keypoint_file, "r")
 file_content = file.read()
 keypoints = [line.split() for line in file_content.split('\n')]
+
 # print(keypoints[0][:])
 # ratio = 96 / 192
 # mask_org = cv2.imread(folder + category + mask + mask_paths[i], 0)
 # print()
+
 new_keypoints = []
+
 # for j in range(len(keypoints)):
 #     col = []
 #     for k in range(len(keypoints[j])):
@@ -69,6 +76,7 @@ new_keypoints = []
 #         # print(int(round(int(keypoints[0][k])*ratio)))
 #     new_keypoints.append(col)
 # print(new_keypoints)
+
 for i in range(len(mask_paths)):
     mask_org = cv2.imread(folder + category + mask + mask_paths[i], 0)
     img_org = cv2.imread(folder + category + color + color_paths[i])
