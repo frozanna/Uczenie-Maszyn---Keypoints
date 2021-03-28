@@ -3,9 +3,9 @@ import os
 import glob                
 import cv2
 
-folder = "./Dataset/"
-category = "ir_fm_f/"
-keypoint = "ir_fm_f_keypoints"
+folder = "./Dataset/Test/"
+category = "ir_fm_r/"
+keypoint = "ir_fm_r_keypoints"
 color = "color/"
 mask = "mask/"
 rsize = 96
@@ -57,25 +57,10 @@ def resize_img_and_keypoint(img, n):
 color_paths = load_images_from_folder(folder, category+color)
 mask_paths = load_images_from_folder(folder, category+mask)
 keypoint_file = folder + category + keypoint
-# print(keypoint_file)
 file = open(keypoint_file, "r")
 file_content = file.read()
 keypoints = [line.split() for line in file_content.split('\n')]
-
-# print(keypoints[0][:])
-# ratio = 96 / 192
-# mask_org = cv2.imread(folder + category + mask + mask_paths[i], 0)
-# print()
-
 new_keypoints = []
-
-# for j in range(len(keypoints)):
-#     col = []
-#     for k in range(len(keypoints[j])):
-#         col.append(int(round(int(keypoints[0][k])*ratio)))
-#         # print(int(round(int(keypoints[0][k])*ratio)))
-#     new_keypoints.append(col)
-# print(new_keypoints)
 
 for i in range(len(mask_paths)):
     mask_org = cv2.imread(folder + category + mask + mask_paths[i], 0)
@@ -110,7 +95,7 @@ for i in range(len(mask_paths)):
     ratio = rsize / w
     col = []
     for k in range(len(keypoints[i])):
-        col.append(int(round(int(keypoints[i][k])*ratio)))
+        col.append(min(int(round(int(keypoints[i][k])*ratio)), 96))
     new_keypoints.append(col)
 
 new_keypoints_file = folder + 'Cropped_96/' + category + keypoint + "_" + str(rsize)
